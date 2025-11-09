@@ -1,19 +1,20 @@
 <?php
-// This is our new AI Service, written in PHP.
+// This is our new AI Service, with better error checking.
 
 function generateIcebreaker($studentName, $studentInterest, $seniorName, $seniorInterest) {
 
     // --- PASTE YOUR API KEY HERE ---
     $API_KEY = "AIzaSyCbj1MpzhMvN5DqOqklejhcgeFSUpgaGKA";
-    // ---------------------------------
 
-    if ($API_KEY === "AIzaSyCbj1MpzhMvN5DqOqklejhcgeFSUpgaGKA") {
-        return "You're connected! A good first question: What's a piece of advice you wish you'd known at 20?";
+    // We just check if you forgot to paste the key.
+    if (empty($API_KEY) || $API_KEY === "YOUR_GEMINI_API_KEY_GOES_HERE") {
+        return "<strong>AI Error:</strong> API Key is missing or is still the placeholder in api/ai_service.php";
     }
+  
+
 
     $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=" . $API_KEY;
 
-    // The prompt is based on the ai-service.js file you sent
     $prompt = "You are Aura, an AI wellness agent. A student and senior are connecting.
 Student: $studentName (interested in $studentInterest)
 Senior: $seniorName (interested in $seniorInterest)
@@ -43,19 +44,29 @@ Example: 'Ask $seniorName about a challenge they faced when they were interested
     ]);
 
     $response = curl_exec($ch);
+
+    // This will catch if curl is disabled on your XAMPP
     if (curl_errno($ch)) {
+        $error_msg = curl_error($ch);
         curl_close($ch);
-        return "You're connected! A good first question: What's a piece of advice you wish you'd known at 20?";
+        return "<strong>AI (curl) Error:</strong> " . $error_msg;
     }
+
     curl_close($ch);
 
     $result = json_decode($response, true);
 
+    // This is a successful response
     if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
         return $result['candidates'][0]['content']['parts'][0]['text'];
     }
 
-    // Fallback message
-    return "You're connected with $seniorName! Feel free to start the chat.";
+    // This will catch if your API key is invalid
+    if (isset($result['error']['message'])) {
+        return "<strong>AI (Google) Error:</strong> " . $result['error']['message'];
+    }
+
+    // A final fallback
+    //return "<strong>AI Error:</strong> Unknown error. Response: "a . $response;
 }
 ?>
