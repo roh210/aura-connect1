@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Session</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="css/my-style.css" rel="stylesheet">
+    <!-- This is the new CSS for chat bubble animation -->
+    <style>
+        @keyframes pop-in {
+            0% {
+                opacity: 0;
+                transform: scale(0.8) translateY(10px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        #chat-messages > div {
+            animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-full">
+<div class="w-full h-full max-w-lg mx-auto bg-white shadow-2xl rounded-lg overflow-hidden md:max-w-4xl md:h-[90vh] md:my-12">
+    <main id="page-chat" class="page flex flex-col h-full">
+        <header class="flex-shrink-0 bg-white p-4 border-b flex justify-between items-center">
+            <div>
+                <!-- This now shows the REAL partner's name -->
+                <h2 class="font-semibold text-lg text-gray-800">Chatting with <?php echo htmlspecialchars($chat_partner_name); ?></h2>
+                <p id="chat-timer" class="text-sm text-red-600 font-semibold">Time remaining: 10:00</p>
+            </div>
+            <button id="leave-chat-btn" class="text-sm bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300">
+                Leave Chat
+            </button>
+        </header>
+
+        <div id="chat-messages" class="flex-grow p-4 space-y-4 overflow-y-auto bg-gray-100">
+            <!-- Messages will be injected here -->
+        </div>
+
+        <footer class="flex-shrink-0 p-4 bg-white border-t">
+            <form id="chat-form" class="flex items-center space-x-3">
+                <input id="chat-input" type="text" placeholder="Type your message..." class="flex-grow border rounded-full py-3 px-5 focus:outline-none focus:ring-2 focus:ring-blue-500" autocomplete="off">
+                <button type="submit" class="bg-blue-600 text-white rounded-full p-3 hover:bg-blue-700 transition duration-300">
+                    <svg class="w-6 h-6 -rotate-90" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
+                </button>
+            </form>
+        </footer>
+    </main>
+</div>
+
+<script>
+    // --- Global Chat Variables ---
+    const userName = <?php echo json_encode($user_name); ?>; // Your real name
+    const partnerName = <?php echo json_encode($chat_partner_name); ?>; // Your partner's real name
+    const userType = <?php echo json_encode($user_type); ?>;
+
+    const messagesEl = document.getElementById('chat-messages');
+    const formEl = document.getElementById('chat-form');
+    const inputEl = document.getElementById('chat-input');
+    const leaveBtn = document.getElementById('leave-chat-btn');
+
+    let pollInterval;
+    let timerInterval;
+    let lastMessageTimestamp = 0;
+
+    // --- Core Functions ---
+
+    async function pollForMessages() {
+        try {
+            const response = await fetch('index.php?view=api&action=get_messages');
+            const messages = await response.json();
+
+            if (Array.isArray(messages)) {
+                messages.forEach(msg => {
+                    if (msg && msg.timestamp > lastMessageTimestamp) {
+                        addMessage(msg.user, msg.message, msg.is_admin);
+                        lastMessageTimestamp = msg.timestamp;
+                    }
+                });
+            }
+        } catch (e) {
+            console.error("Error polling for messages:", e);
+        }
+    }
+
+    function addMessage(sender, text, isAdmin = false) {
+        const isUser = (sender === userName);
+        let bubbleClass = 'bg-gray-200 text-gray-800';
+        let alignClass = 'self-start';
+        if (isUser) {
+            bubbleClass = 'bg-blue-600 text-white';
+            alignClass = 'self-end';
+        }
+        if (isAdmin) {
+            bubbleClass = 'bg-yellow-100 text-yellow-800 border border-yellow-300';
+            alignClass = 'self-center w-full max-w-sm mx-auto text-sm text-center';
+        }
+
+        const msgEl = document.createElement('div');
+        msgEl.className = `p-3 rounded-lg max-w-xs md:max-w-md ${bubbleClass} ${alignClass} shadow-sm`;
+
+        const strong = document.createElement('strong');
+        strong.className = `block text-sm mb-1 ${isAdmin || isUser ? 'hidden' : ''}`;
+        strong.textContent = sender; // Now shows the sender's real name
+        msgEl.appendChild(strong);
+
+        if (isAdmin) {
+            msgEl.innerHTML += text;
+        } else {
+            msgEl.appendChild(document.createTextNode(text));
+        }
+
+        messagesEl.appendChild(msgEl);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    async function handleFormSubmit(e) {
+        e.preventDefault();
+        const messageText = inputEl.value.trim();
+
+        if (messageText) {
+            inputEl.disabled = true;
+
+            try {
+                await fetch('index.php?view=api&action=send_message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user: userName, // Send your real name
+                        message: messageText
+                    })
+                });
+
+                inputEl.value = '';
+                inputEl.disabled = false;
+                inputEl.focus();
+            } catch (e) {
+                console.error("Error sending message:", e);
+                inputEl.disabled = false;
+            }
+        }
+    }
+
+    function handleLeaveChat() {
+        if (confirm("Are you sure you want to end the chat?")) {
+            clearInterval(pollInterval);
+            clearInterval(timerInterval);
+
+            fetch('index.php?view=api&action=reset_chat')
+                .then(() => {
+                    const destination = (userType === 'student') ? 'index.php?view=student' : 'index.php?view=senior';
+                    window.location.href = destination;
+                });
+        }
+    }
+
+    function startTimer() {
+        let duration = 60 * 10; // 10 minutes
+        const timerEl = document.getElementById('chat-timer');
+
+        timerInterval = setInterval(() => {
+            let minutes = Math.floor(duration / 60);
+            let seconds = duration % 60;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+
+            timerEl.textContent = `Time remaining: ${minutes}:${seconds}`;
+
+            if (--duration < 0) {
+                clearInterval(timerInterval);
+                alert("Time's up! We hope this was a refreshing break.");
+                handleLeaveChat();
+            }
+        }, 1000);
+    }
+
+
+    // --- Initialize Everything ---
+    formEl.addEventListener('submit', handleFormSubmit);
+    leaveBtn.addEventListener('click', handleLeaveChat);
+    startTimer();
+
+    pollInterval = setInterval(pollForMessages, 2000);
+    pollForMessages();
+</script>
+</body>
+</html>

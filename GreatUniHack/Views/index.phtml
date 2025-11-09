@@ -1,0 +1,62 @@
+>
+
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Connect - Welcome</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Your screenshot shows css/my-style.css. Let's use the correct relative path -->
+    <link href="../css/my-style.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 h-full flex items-center justify-center antialiased">
+
+<!-- MODAL: Crisis Disclaimer (Shows first) -->
+<div id="crisis-modal" class="modal-backdrop fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-50">
+    <div class="modal-content bg-white w-full max-w-md p-6 rounded-lg shadow-xl text-center">
+        <!-- ... (modal content is the same) ... -->
+        <div class="text-red-500 mx-auto mb-4">
+            <svg class="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-3">Important Disclaimer</h2>
+        <p class="text-gray-600 mb-6">Aura Connect is a wellness platform, not a crisis service.</p>
+        <p class="text-gray-600 mb-8">If you are in crisis, please contact your local emergency services.</p>
+        <button id="accept-button" class="w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300">
+            I Understand and Accept
+        </button>
+    </div>
+</div>
+
+<!-- PAGE: Landing (Hidden by default) -->
+<div id="page-landing" class="page hidden flex-col items-center justify-center h-full p-8 text-center">
+    <!-- ... (logo/title is the same) ... -->
+    <div class="text-blue-600">
+        <svg class="w-20 h-20 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.828 0l-4.242-4.243a1.998 1.998 0 010-2.828l4.243-4.242a1.998 1.998 0 012.828 0l4.242 4.243a1.998 1.998 0 010 2.828z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172L12 19 14.828 16.172"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V4"></path></svg>
+    </div>
+    <h1 class="text-4xl font-bold text-gray-800 mt-6">Aura Connect</h1>
+    <p class="text-lg text-gray-600 mt-4 mb-12">When worlds collide, new connections are made.</p>
+    <div class="space-y-4 w-full max-w-xs">
+
+        <!-- **** LINK FIX **** -->
+        <!-- Link to the controller (index.php) and pass the view we want -->
+        <a href="student.php" class="block w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:bg-blue-700 transition duration-300 transform hover:-translate-y-0.5">
+            Enter Student Portal
+        </a>
+
+        <!-- **** LINK FIX **** -->
+        <a href="senior.php" class="block w-full bg-green-600 text-white font-semibold py-3 px-6 rounded-lg shadow-lg hover:bg-green-700 transition duration-300 transform hover:-translate-y-0.5">
+            Enter Senior Portal
+        </a>
+    </div>
+</div>
+
+<script>
+    // Simple JS for the modal
+    document.getElementById('accept-button').addEventListener('click', () => {
+        document.getElementById('crisis-modal').style.display = 'none';
+        document.getElementById('page-landing').style.display = 'flex';
+    });
+</script>
+</body>
+</html>
